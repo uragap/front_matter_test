@@ -1,3 +1,3 @@
 # `Send` Approximation
 
-these values are **held in a restorable condition** because they need to be used during the test run.
+を行う場合、それらの値はテスト実行時に使用する必要があるため**復元可能な状態で保持されます。**

@@ -1,3 +1,3 @@
 # `Send` Approximation
 
-test **text** with different *tags and* without sense
+test **text** with *different* text *tags **and** without* sense

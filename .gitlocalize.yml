@@ -1,13 +1,7 @@
-pretranslate:
-  segments:
-    ignore_patterns:
-    - "{%\s?([a-zA-Z'\"\s]*)\s?%}"
-    - "{%\s?Aside\s?('[a-z]+')?\s?%}"
-    - "Native"
-    - "^(title|authors|date|description): "
-
+synchronize:
   paths:
-  - source: "src/site/content/en/angular"
+  - source: .
+    exclude:
+    - "."
     include:
-    - "**/index.md"
-    - "accessible-angular-with-codelyzer/index.md"
+    - "start/."

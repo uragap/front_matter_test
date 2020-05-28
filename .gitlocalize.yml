@@ -1,4 +1,4 @@
-synchronize:
+synchronizeA:
   paths:
   - source: .
     exclude:

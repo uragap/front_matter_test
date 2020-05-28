@@ -1,95 +1,301 @@
----
-toc_priority: 0
-toc_title: Overview
----
+# TensorFlow 2.x in TFX
 
-# What is ClickHouse? {#what-is-clickhouse}
+[TensorFlow 2.0 was released in 2019](https://blog.tensorflow.org/2019/09/tensorflow-20-is-now-available.html),
+with
+[tight integration of Keras](https://www.tensorflow.org/guide/keras/overview),
+[eager execution](https://www.tensorflow.org/guide/eager) by default, and
+[Pythonic function execution](https://www.tensorflow.org/guide/function), among
+other
+[new features and improvements](https://www.tensorflow.org/guide/effective_tf2#a_brief_summary_of_major_changes).
 
-ClickHouse is a column-oriented database management system (DBMS) for online analytical processing of queries (OLAP).
+This guide provides a comprehensive technical overview of TF 2.x in TFX.
 
-In a “normal” row-oriented DBMS, data is stored in this order:
+## Which version to use?
 
-| Row | WatchID     | JavaEnable | Title              | GoodEvent | EventTime           |
-|---|---------|--------|------------|-------|-------------|
-| \#0 | 89354350662 | 1          | Investor Relations | 1         | 2016-05-18 05:19:20 |
-| \#1 | 90329509958 | 0          | Contact us         | 1         | 2016-05-18 08:10:20 |
-| \#2 | 89953706054 | 1          | Mission            | 1         | 2016-05-18 07:38:00 |
-| \#N | …           | …          | …                  | …         | …                   |
+TFX is compatible with TensorFlow 2.x, and the high-level APIs that existed in
+TensorFlow 1.x (particularly Estimators) continue to work.
 
-In other words, all the values related to a row are physically stored next to each other.
+### Start new projects in TensorFlow 2.x
 
-Examples of a row-oriented DBMS are MySQL, Postgres, and MS SQL Server.
+Since TensorFlow 2.x retains the high-level capabilities of TensorFlow 1.x,
+there is no advantage to using the older version on new projects, even if you
+don't plan to use the new features.
 
-In a column-oriented DBMS, data is stored like this:
+Therefore, if you are starting a new TFX project, we recommend that you use
+TensorFlow 2.x. You may want to update your code later as full support for Keras
+and other new features become available, and the scope of changes will be much
+more limited if you start with TensorFlow 2.x, rather than trying to upgrade
+from TensorFlow 1.x in the future.
 
-| Row:        | \#0                 | \#1                 | \#2                 | \#N |
-|---------|-------------|-------------|-------------|---|
-| WatchID:    | 89354350662         | 90329509958         | 89953706054         | …   |
-| JavaEnable: | 1                   | 0                   | 1                   | …   |
-| Title:      | Investor Relations  | Contact us          | Mission             | …   |
-| GoodEvent:  | 1                   | 1                   | 1                   | …   |
-| EventTime:  | 2016-05-18 05:19:20 | 2016-05-18 08:10:20 | 2016-05-18 07:38:00 | …   |
+### Converting existing projects to TensorFlow 2.x
 
-These examples only show the order that data is arranged in. The values from different columns are stored separately, and data from the same column is stored together.
+Code written for TensorFlow 1.x is largely compatible with TensorFlow 2.x and
+will continue to work in TFX.
 
-Examples of a column-oriented DBMS: Vertica, Paraccel (Actian Matrix and Amazon Redshift), Sybase IQ, Exasol, Infobright, InfiniDB, MonetDB (VectorWise and Actian Vector), LucidDB, SAP HANA, Google Dremel, Google PowerDrill, Druid, and kdb+.
+However, if you'd like to take advantage of improvements and new features as
+they become available in TF 2.x, you can follow the
+[instructions for migrating to TF 2.x](https://www.tensorflow.org/guide/migrate).
 
-Different orders for storing data are better suited to different scenarios. The data access scenario refers to what queries are made, how often, and in what proportion; how much data is read for each type of query – rows, columns, and bytes; the relationship between reading and updating data; the working size of the data and how locally it is used; whether transactions are used, and how isolated they are; requirements for data replication and logical integrity; requirements for latency and throughput for each type of query, and so on.
+## Estimator
 
-The higher the load on the system, the more important it is to customize the system set up to match the requirements of the usage scenario, and the more fine grained this customization becomes. There is no system that is equally well-suited to significantly different scenarios. If a system is adaptable to a wide set of scenarios, under a high load, the system will handle all the scenarios equally poorly, or will work well for just one or few of possible scenarios.
+The Estimator API has been retained in TensorFlow 2.x, but is not the focus of
+new features and development. Code written in TensorFlow 1.x or 2.x using
+Estimators will continue to work as expected in TFX.
 
-## Key Properties of OLAP Scenario {#key-properties-of-olap-scenario}
+Here is an end-to-end TFX example using pure Estimator:
+[Taxi example (Estimator)](https://github.com/tensorflow/tfx/blob/r0.21/tfx/examples/chicago_taxi_pipeline/taxi_utils.py)
 
--   The vast majority of requests are for read access.
--   Data is updated in fairly large batches (\> 1000 rows), not by single rows; or it is not updated at all.
--   Data is added to the DB but is not modified.
--   For reads, quite a large number of rows are extracted from the DB, but only a small subset of columns.
--   Tables are “wide,” meaning they contain a large number of columns.
--   Queries are relatively rare (usually hundreds of queries per server or less per second).
--   For simple queries, latencies around 50 ms are allowed.
--   Column values are fairly small: numbers and short strings (for example, 60 bytes per URL).
--   Requires high throughput when processing a single query (up to billions of rows per second per server).
--   Transactions are not necessary.
--   Low requirements for data consistency.
--   There is one large table per query. All tables are small, except for one.
--   A query result is significantly smaller than the source data. In other words, data is filtered or aggregated, so the result fits in a single server’s RAM.
+## Keras with `model_to_estimator`
 
-It is easy to see that the OLAP scenario is very different from other popular scenarios (such as OLTP or Key-Value access). So it doesn’t make sense to try to use OLTP or a Key-Value DB for processing analytical queries if you want to get decent performance. For example, if you try to use MongoDB or Redis for analytics, you will get very poor performance compared to OLAP databases.
+Keras models can be wrapped with the `tf.keras.estimator.model_to_estimator`
+function, which allows them to work as if they were Estimators. To use this:
 
-## Why Column-Oriented Databases Work Better in the OLAP Scenario {#why-column-oriented-databases-work-better-in-the-olap-scenario}
+1.  Build a Keras model.
+2.  Pass the compiled model into `model_to_estimator`.
+3.  Use the result of `model_to_estimator` in Trainer, the way you would
+    typically use an Estimator.
 
-Column-oriented databases are better suited to OLAP scenarios: they are at least 100 times faster in processing most queries. The reasons are explained in detail below, but the fact is easier to demonstrate visually:
+```py
+# Build a Keras model.
+def _keras_model_builder():
+  """Creates a Keras model."""
+  ...
 
-**Row-oriented DBMS**
+  model = tf.keras.Model(inputs=inputs, outputs=output)
+  model.compile()
 
-![Row-oriented](images/row_oriented.gif#)
+  return model
 
-**Column-oriented DBMS**
 
-![Column-oriented](images/column_oriented.gif#)
+# Write a typical trainer function
+def trainer_fn(trainer_fn_args, schema):
+  """Build the estimator, using model_to_estimator."""
+  ...
 
-See the difference?
+  # Model to estimator
+  estimator = tf.keras.estimator.model_to_estimator(
+      keras_model=_keras_model_builder(), config=run_config)
 
-### Input/output {#inputoutput}
+  return {
+      'estimator': estimator,
+      ...
+  }
+```
 
-1.  For an analytical query, only a small number of table columns need to be read. In a column-oriented database, you can read just the data you need. For example, if you need 5 columns out of 100, you can expect a 20-fold reduction in I/O.
-2.  Since data is read in packets, it is easier to compress. Data in columns is also easier to compress. This further reduces the I/O volume.
-3.  Due to the reduced I/O, more data fits in the system cache.
+Other than the user module file of Trainer, the rest of the pipeline remains
+unchanged. Here is an end-to-end TFX example using Keras with
+model_to_estimator:
+[Iris example (model_to_estimator)](https://github.com/tensorflow/tfx/blob/r0.21/tfx/examples/iris/iris_utils.py)
 
-For example, the query “count the number of records for each advertising platform” requires reading one “advertising platform ID” column, which takes up 1 byte uncompressed. If most of the traffic was not from advertising platforms, you can expect at least 10-fold compression of this column. When using a quick compression algorithm, data decompression is possible at a speed of at least several gigabytes of uncompressed data per second. In other words, this query can be processed at a speed of approximately several billion rows per second on a single server. This speed is actually achieved in practice.
+## Native Keras (i.e. Keras without `model_to_estimator`)
 
-### CPU {#cpu}
+Note: Full support for all features in Keras is in progress, in most cases,
+Keras in TFX will work as expected. It does not yet work with Sparse Features
+for FeatureColumns.
 
-Since executing a query requires processing a large number of rows, it helps to dispatch all operations for entire vectors instead of for separate rows, or to implement the query engine so that there is almost no dispatching cost. If you don’t do this, with any half-decent disk subsystem, the query interpreter inevitably stalls the CPU. It makes sense to both store data in columns and process it, when possible, by columns.
+### Examples and Colab
 
-There are two ways to do this:
+Here are several examples with native Keras:
 
-1.  A vector engine. All operations are written for vectors, instead of for separate values. This means you don’t need to call operations very often, and dispatching costs are negligible. Operation code contains an optimized internal cycle.
+*   [Iris](https://github.com/tensorflow/tfx/blob/master/tfx/examples/iris/iris_pipeline_native_keras.py)
+    ([module file](https://github.com/tensorflow/tfx/blob/master/tfx/examples/iris/iris_utils_native_keras.py)):
+    'Hello world' end-to-end example.
+*   [MNIST](https://github.com/tensorflow/tfx/blob/master/tfx/examples/mnist/mnist_pipeline_native_keras.py)
+    ([module file](https://github.com/tensorflow/tfx/blob/master/tfx/examples/mnist/mnist_utils_native_keras.py)):
+    Image and TFLite end-to-end example.
+*   [Taxi](https://github.com/tensorflow/tfx/blob/master/tfx/examples/chicago_taxi_pipeline/taxi_pipeline_native_keras.py)
+    ([module file](https://github.com/tensorflow/tfx/blob/master/tfx/examples/chicago_taxi_pipeline/taxi_utils_native_keras.py)):
+    end-to-end example with advanced Transform usage.
 
-2.  Code generation. The code generated for the query has all the indirect calls in it.
+We also have a per-component
+[Keras Colab](https://www.tensorflow.org/tfx/tutorials/tfx/components_keras).
 
-This is not done in “normal” databases, because it doesn’t make sense when running simple queries. However, there are exceptions. For example, MemSQL uses code generation to reduce latency when processing SQL queries. (For comparison, analytical DBMSs require optimization of throughput, not latency.)
+### TFX Components
 
-Note that for CPU efficiency, the query language must be declarative (SQL or MDX), or at least a vector (J, K). The query should only contain implicit loops, allowing for optimization.
+The following sections explain how related TFX components support native Keras.
 
-{## [Original article](https://clickhouse.tech/docs/en/) ##}
+#### Transform
+
+Transform currently has experimental support for Keras models.
+
+The Transform component itself can be used for native Keras without change. The
+`preprocessing_fn` definition remains the same, using
+[TensorFlow](https://www.tensorflow.org/api_docs/python/tf) and
+[tf.Transform](https://www.tensorflow.org/tfx/transform/api_docs/python/tft)
+ops.
+
+The serving function and eval function are changed for native Keras. Details
+will be discussed in the following Trainer and Evaluator sections.
+
+Note: Transformations within the `preprocessing_fn` cannot be applied to the
+label feature for training or eval.
+
+#### Trainer
+
+To configure native Keras, the `GenericExecutor` needs to be set for Trainer
+component to replace the default Estimator based executor. For details, please
+check
+[here](trainer.md#configuring-the-trainer-component-to-use-the-genericexecutor).
+
+##### Keras Module file with Transform
+
+The training module file must contains a `run_fn` which will be called by the
+`GenericExecutor`, a typical Keras `run_fn` would look like this:
+
+```python
+def run_fn(fn_args: TrainerFnArgs):
+  """Train the model based on given args.
+
+  Args:
+    fn_args: Holds args used to train the model as name/value pairs.
+  """
+  tf_transform_output = tft.TFTransformOutput(fn_args.transform_output)
+
+  # Train and eval files contains transformed examples.
+  # _input_fn read dataset based on transformed feature_spec from tft.
+  train_dataset = _input_fn(fn_args.train_files, tf_transform_output, 40)
+  eval_dataset = _input_fn(fn_args.eval_files, tf_transform_output, 40)
+
+  model = _build_keras_model()
+
+  model.fit(
+      train_dataset,
+      steps_per_epoch=fn_args.train_steps,
+      validation_data=eval_dataset,
+      validation_steps=fn_args.eval_steps)
+
+  signatures = {
+      'serving_default':
+          _get_serve_tf_examples_fn(model,
+                                    tf_transform_output).get_concrete_function(
+                                        tf.TensorSpec(
+                                            shape=[None],
+                                            dtype=tf.string,
+                                            name='examples')),
+  }
+  model.save(fn_args.serving_model_dir, save_format='tf', signatures=signatures)
+```
+
+In the `run_fn` above, a serving signature is needed when exporting the trained
+model so that model can take raw examples for prediction. A typical serving
+function would look like this:
+
+```python
+def _get_serve_tf_examples_fn(model, tf_transform_output):
+  """Returns a function that parses a serialized tf.Example."""
+
+  # the layer is added as an attribute to the model in order to make sure that
+  # the model assets are handled correctly when exporting.
+  model.tft_layer = tf_transform_output.transform_features_layer()
+
+  @tf.function
+  def serve_tf_examples_fn(serialized_tf_examples):
+    """Returns the output to be used in the serving signature."""
+    feature_spec = tf_transform_output.raw_feature_spec()
+    feature_spec.pop(_LABEL_KEY)
+    parsed_features = tf.io.parse_example(serialized_tf_examples, feature_spec)
+
+    transformed_features = model.tft_layer(parsed_features)
+
+    return model(transformed_features)
+
+  return serve_tf_examples_fn
+```
+
+In above serving function, tf.Transform transformations need to be applied to
+the raw data for inference, using the
+[`tft.TransformFeaturesLayer`](https://github.com/tensorflow/transform/blob/master/docs/api_docs/python/tft/TransformFeaturesLayer.md)
+layer. The previous `_serving_input_receiver_fn` which was required for
+Estimators will no longer be needed with Keras.
+
+##### Keras Module file without Transform
+
+This is similar to the module file shown above, but without the transformations:
+
+```python
+def _get_serve_tf_examples_fn(model, schema):
+
+  @tf.function
+  def serve_tf_examples_fn(serialized_tf_examples):
+    feature_spec = _get_raw_feature_spec(schema)
+    feature_spec.pop(_LABEL_KEY)
+    parsed_features = tf.io.parse_example(serialized_tf_examples, feature_spec)
+    return model(parsed_features)
+
+  return serve_tf_examples_fn
+
+
+def run_fn(fn_args: TrainerFnArgs):
+  schema = io_utils.parse_pbtxt_file(fn_args.schema_file, schema_pb2.Schema())
+
+  # Train and eval files contains raw examples.
+  # _input_fn reads the dataset based on raw feature_spec from schema.
+  train_dataset = _input_fn(fn_args.train_files, schema, 40)
+  eval_dataset = _input_fn(fn_args.eval_files, schema, 40)
+
+  model = _build_keras_model()
+
+  model.fit(
+      train_dataset,
+      steps_per_epoch=fn_args.train_steps,
+      validation_data=eval_dataset,
+      validation_steps=fn_args.eval_steps)
+
+  signatures = {
+      'serving_default':
+          _get_serve_tf_examples_fn(model, schema).get_concrete_function(
+              tf.TensorSpec(shape=[None], dtype=tf.string, name='examples')),
+  }
+  model.save(fn_args.serving_model_dir, save_format='tf', signatures=signatures)
+```
+
+##### [tf.distribute.Strategy](https://www.tensorflow.org/guide/distributed_training)
+
+At this time TFX only supports single worker strategies (e.g.,
+[MirroredStrategy](https://www.tensorflow.org/api_docs/python/tf/distribute/MirroredStrategy),
+[OneDeviceStrategy](https://www.tensorflow.org/api_docs/python/tf/distribute/OneDeviceStrategy)).
+
+To use a distribution strategy, create an appropriate tf.distribute.Strategy and
+move the creation and compiling of the Keras model inside a strategy scope.
+
+For example, replace above `model = _build_keras_model()` with:
+
+```python
+  mirrored_strategy = tf.distribute.MirroredStrategy()
+  with mirrored_strategy.scope():
+    model = _build_keras_model()
+
+  # Rest of the code can be unchanged.
+  model.fit(...)
+```
+
+To verify the device (CPU/GPU) used by `MirroredStrategy`, enable info level
+tensorflow logging:
+
+```python
+import logging
+logging.getLogger("tensorflow").setLevel(logging.INFO)
+```
+
+and you should be able to see `Using MirroredStrategy with devices (...)` in the
+log.
+
+Note: The environment variable `TF_FORCE_GPU_ALLOW_GROWTH=true` might be needed
+for a GPU out of memory issue. For details, please refer to
+[tensorflow GPU guide](https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth).
+
+#### Evaluator
+
+In TFMA v0.2x, ModelValidator and Evaluator have been combined into a single
+[new Evaluator component](https://github.com/tensorflow/community/blob/master/rfcs/20200117-tfx-combining-model-validator-with-evaluator.md).
+The new Evaluator component can perform both single model evaluation and also
+validate the current model compared with previous models. With this change, the
+Pusher component now consumes a blessing result from Evaluator instead of
+ModelValidator.
+
+The new Evaluator supports Keras models as well as Estimator models. The
+`_eval_input_receiver_fn` and eval saved model which were required previously
+will no longer be needed with Keras, since Evaluator is now based on the same
+`SavedModel` that is used for serving.
+
+[See Evaluator for more information](evaluator.md).

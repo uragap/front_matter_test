@@ -1,7 +1,0 @@
-synchronizeA:
-  paths:
-  - source: .
-    exclude:
-    - "*.*"
-    include:
-    - "start/*.*"

@@ -3,10 +3,13 @@ $title: AMP for Email Supported CSS
 order: 5
 formats:
   - email
+  - message
 teaser:
   text: >-
     This document outlines the CSS features currently supported inside AMP
     emails.
+  title: >-
+    Title
 toc: true
 ---
 

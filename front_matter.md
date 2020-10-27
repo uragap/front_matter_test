@@ -11,6 +11,9 @@ teaser:
   title: >-
     Title
 toc: true
+test:key: text
+some 'key': bar
+one; more: foo
 ---
 
 Licensed under the Apache License, Version 2.0 (the "License");

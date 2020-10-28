@@ -11,9 +11,11 @@ teaser:
   title: >-
     Title
 toc: true
-test:key: text
+test: key:text
 some 'key': bar
 one; more: foo
+$pull 'request': test
+frnt: matter:5
 ---
 
 Licensed under the Apache License, Version 2.0 (the "License");

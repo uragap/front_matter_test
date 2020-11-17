@@ -6,7 +6,7 @@ formats:
   - message
 teaser:
   text: >-
-    This document outlines the CSS *features* currently supported inside AMP
+    This document outlines the CSS *features* currently [supported](https://www.youtube.com/watch?v=Gv8A4CktajQ) inside AMP
     emails.
   title: >-
     Title

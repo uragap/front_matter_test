@@ -1,5 +1,5 @@
 ---
-$title: AMP for Email Supported CSS
+$title: AMP for *Email* Supported CSS
 order: 5
 formats:
   - email

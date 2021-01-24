@@ -4,10 +4,8 @@ settings:
 pretranslate:
   segments:
     ignore_frontmatter_keys:
-    - "layout"
     - "permalink"
     - "noindex"
-    - "date"
     - "override"
     - "codelabs"
     - "tags"

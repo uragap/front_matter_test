@@ -1,6 +1,5 @@
 ---
 layout: post
-title: Accessible responsive design
 authors:
   - dgash
   - megginkearney

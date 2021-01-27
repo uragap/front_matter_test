@@ -1,4 +1,12 @@
-name: Jack
-surname: White
-age: 25
-address: Moscow
+title: AMP for *Email* Supported CSS
+formats:
+  - email
+  - message
+teaser:
+  text: >-
+    This document outlines the CSS *features* currently [supported](https://www.youtube.com/watch?v=Gv8A4CktajQ) inside AMP
+    emails.
+  title: >-
+    Title
+toc: true
+test: key:text

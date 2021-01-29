@@ -1,0 +1,16 @@
+title: AMP for *Email* Supported CSS
+order: 5
+formats:
+  - email
+  - message
+teaser:
+  text: >-
+    This document outlines the CSS *features* currently [supported](https://www.youtube.com/watch?v=Gv8A4CktajQ) inside AMP
+    emails.
+  title: >-
+    Title
+toc: true
+football:
+  teams:
+    - zenit
+    - arsenal

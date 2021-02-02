@@ -1,6 +1,11 @@
 settings:
   remove_quotes_in_frontmatter:
    - "false"
+segments:
+  ignore_frontmatter_keys:
+    - "tags"
+    - "authors"
+    - "translated"
 pretranslate:
   segments:
     ignore_frontmatter_keys:

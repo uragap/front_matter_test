@@ -14,7 +14,6 @@ segments:
   ignore_frontmatter_keys:
   - "authors"
   - "translated"
-  - "tags"
     
     ignore_patterns:
      - !ruby/regexp /{%\s?([a-zA-Z0-9\.\-\?\'\"\,\!\s\/]*)\s?%}/

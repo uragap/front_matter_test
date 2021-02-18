@@ -6,8 +6,3 @@ segments:
   - "authors"
   - "translated"
   - "tags"
-
-  paths:
-  - source: "src/site/content/en"
-    include:
-    - "lighthouse-performance/**/*.md"

@@ -5,3 +5,4 @@ segments:
   ignore_frontmatter_keys:
   - "authors"
   - "translated"
+  - "tags"

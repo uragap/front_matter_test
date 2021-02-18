@@ -5,6 +5,7 @@ segments:
   ignore_frontmatter_keys:
   - "authors"
   - "translated"
+  - "tags"
 
   paths:
   - source: "src/site/content/en"

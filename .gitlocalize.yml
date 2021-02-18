@@ -12,7 +12,6 @@ pretranslate:
     - "translated"
 segments:
   ignore_frontmatter_keys:
-    - "tags"
     - "authors"
     - "translated"
 

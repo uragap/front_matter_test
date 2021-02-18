@@ -1,15 +1,6 @@
 settings:
   remove_quotes_in_frontmatter:
    - "false"
-pretranslate:
-  segments:
-    ignore_frontmatter_keys:
-    - "permalink"
-    - "override"
-    - "codelabs"
-    - "tags"
-    - "authors"
-    - "translated"
 segments:
   ignore_frontmatter_keys:
   - "authors"

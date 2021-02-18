@@ -10,6 +10,11 @@ pretranslate:
     - "tags"
     - "authors"
     - "translated"
+segments:
+  ignore_frontmatter_keys:
+    - "tags"
+    - "authors"
+    - "translated"
 
     ignore_patterns:
      - !ruby/regexp /{%\s?([a-zA-Z0-9\.\-\?\'\"\,\!\s\/]*)\s?%}/

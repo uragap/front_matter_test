@@ -12,6 +12,3 @@ tags:
   - accessibility
 translated: 2020-05-29
 ---
-
-We know that it's a good idea to design responsively to provide the best multi-device experience,
-but responsive design also yields a win for you.

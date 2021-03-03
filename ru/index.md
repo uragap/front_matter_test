@@ -7,7 +7,7 @@ authors:
 date: 2020-03-31
 updated: 2020-05-29
 description: |
-  We know that it's a good idea to design responsively to the best multi-device experience, but responsive design also yields a win for accessibility.
+  We know that it's a good idea to design to the best multi-device experience, but responsive design also yields a win for accessibility.
 tags:
   - accessibility
 translated: 2020-05-29
